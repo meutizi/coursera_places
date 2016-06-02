@@ -51,5 +51,53 @@ class Place
         
     end
     
+    def self.get_address_components(sort=nil, offset=nil, limit=nil)
+        prototype = [
+            { :$unwind => '$address_components' },
+            { :$project => 
+                {
+                    :address_components => 1,
+                    :formatted_address => 1,
+                    :'geometry.geolocation' => 1
+                }
+            }
+        ]
+        
+        prototype << {:$sort => sort} if !sort.nil?
+        prototype << {:$skip => offset} if !offset.nil?
+        prototype << {:$limit => limit} if !limit.nil?
+        collection.find.aggregate(prototype)
+    end
+    
+    def self.get_country_names
+        results = collection.find.aggregate([
+            { :$unwind => '$address_components' },
+            { :$project => 
+                {
+                    :_id => 0,
+                    :'address_components.long_name' => 1,
+                    :'address_components.types' => 1,
+                }
+            },
+            { :$match => { :'address_components.types' => 'country' } },
+            { :$group => { :_id => '$address_components.long_name'} }
+        ])
+        
+        results.to_a.map { |doc| doc[:_id] }
+    end
+    
+    def self.find_ids_by_country_code(country_code)
+        result = collection.find.aggregate([
+            {
+                :$match => {
+                    :'address_components.types' => 'country',
+                    :'address_components.short_name' => country_code
+                }
+            },
+            { :$project => { :_id => 1 } }
+        ])
+
+        result.map { |doc| doc[:_id].to_s }
+    end
     
 end
