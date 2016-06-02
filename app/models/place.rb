@@ -24,4 +24,32 @@ class Place
         end
     end
     
+    def self.find_by_short_name(short_name)
+        collection.find(:'address_components.short_name' => short_name)
+    end
+    
+    def self.to_places(places)
+        places.map do |place|
+            Place.new(place)
+        end
+    end
+    
+    def self.find id
+        it = collection.find(:id=>BSON::ObjectId.from_string(id)).first
+        return it.nil? ? nil : Place.new(it)
+    end
+    
+    def self.all(offset=0, limit=nil)
+        result = collection.find({}).skip(offset)
+        result.limit(limit) if !limit.nil?
+        return to_places(result)
+    end
+    
+    def destroy
+        id = BSON::ObjectId.from_string(@id)
+        self.class.collection.delete_one(:_id => id)
+        
+    end
+    
+    
 end
