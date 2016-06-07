@@ -100,4 +100,25 @@ class Place
         result.map { |doc| doc[:_id].to_s }
     end
     
+    def self.create_indexes
+        collection.indexes.create_one(:'geometry.geolocation' => Mongo::Index::GEO2DSPHERE)
+    end
+    
+    def self.remove_indexes
+        collection.indexes.drop_one('geometry.geolation_2dsphere')
+    end
+    
+    def self.near(point, max_meters=nil)
+        qry= {
+            :'geometry.geolocation' => {
+                :$near => { :$geometry => point.to_hash, :$max_distance => max_meters }    
+            }    
+        }
+        collection.find(qry)
+    end
+    
+    def near(max_distance=nil)
+        result = self.class.near(@location, max_distance)
+        self.class.to_places(result)
+    end
 end
