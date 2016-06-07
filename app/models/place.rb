@@ -105,13 +105,13 @@ class Place
     end
     
     def self.remove_indexes
-        collection.indexes.drop_one('geometry.geolation_2dsphere')
+        collection.indexes.drop_one('geometry.geolocation_2dsphere')
     end
     
     def self.near(point, max_meters=nil)
         qry= {
             :'geometry.geolocation' => {
-                :$near => { :$geometry => point.to_hash, :$max_distance => max_meters }    
+                :$near => { :$geometry => point.to_hash, :$maxDistance => max_meters }    
             }    
         }
         collection.find(qry)
